@@ -1,5 +1,8 @@
-import 'package:chatapp/Widgets/Mydrawer.dart';
+import 'dart:convert';
+
+import 'package:chatapp/Proveiders/schatprovider.dart';
 import 'package:chatapp/Widgets/chatmessage.dart';
+import 'package:chatapp/Widgets/singleChat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -19,12 +22,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _searchcontroller = TextEditingController();
 
   var scaffoldKey = GlobalKey<ScaffoldState>();
+  var chatss = [];
+  var searchchatss = [];
 
   void logout() async {
     final userProvide = ref.read(userProvider.notifier);
     userProvide.state = null;
     SharedPreferences preferences = await SharedPreferences.getInstance();
     await preferences.remove('user');
+  }
+
+  void acceschat(String id) async {
+    try {
+      final userProvide = ref.read(userProvider.notifier);
+      final token = userProvide.gettoken();
+      final url = Uri.http("10.0.2.2:5174", "/api/chat");
+      final response = await http.post(url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: json.encode({"userId": id}));
+
+      setState(() {
+        chatss.insert(0, json.decode(response.body));
+      });
+    } catch (e) {}
   }
 
   void _searching() async {
@@ -34,32 +57,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return;
     }
     try {
-      
       final userProvide = ref.read(userProvider.notifier);
       final token = userProvide.gettoken();
       print(token);
-          final encodedSearchParameter = Uri.encodeQueryComponent(enteredMessage);
+      final encodedSearchParameter = Uri.encodeQueryComponent(enteredMessage);
 
-    final url = Uri.http("10.0.2.2:5174", "/api/user/", {"search": encodedSearchParameter});
-    final response=await http.get(url,
-    headers: {
-      'Content-Type':'application/json',
-      'Authorization': 'Bearer $token',
- 
-    }
-    );
+      final url = Uri.http(
+          "10.0.2.2:5174", "/api/user/", {"search": encodedSearchParameter});
+      final response = await http.get(url, headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      });
       print(response.body);
-     
-    } catch (e) {
-      
-    }
-
-    }
+      setState(() {
+        searchchatss = json.decode(response.body);
+      });
+      print(searchchatss);
+    } catch (e) {}
+  }
 
   void chats() async {
     try {
+      print("chats method in chascreen");
       final userProvide = ref.read(userProvider.notifier);
       final token = userProvide.gettoken();
+      //final pic = userProvide.getpic();
+      //print(pic);
       print(token);
       final url = Uri.http("10.0.2.2:5174", "/api/chat");
       final response = await http.get(url, headers: {
@@ -67,10 +90,46 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         'Authorization': 'Bearer $token',
       });
       print(response.body);
+      setState(() {
+        chatss = json.decode(response.body);
+      });
+      print(chatss);
     } catch (e) {
       print(e);
     }
   }
+
+  String getsender(users) {
+    final userProvide = ref.read(userProvider.notifier);
+    final _id = userProvide.getid();
+
+    var filteredUsers = users.where((user) => user['_id'] != _id);
+
+    if (filteredUsers.isNotEmpty) {
+      var firstUser = filteredUsers.first;
+      return firstUser['name'].toString();
+    } else {
+      print('No matching user found.');
+    }
+    return "";
+  }
+
+String getsenderpic(users) {
+    final userProvide = ref.read(userProvider.notifier);
+    final _id = userProvide.getid();
+
+    var filteredUsers = users.where((user) => user['_id'] != _id);
+
+    if (filteredUsers.isNotEmpty) {
+      var firstUser = filteredUsers.first;
+      return firstUser['pic'].toString();
+    } else {
+      print('No matching user found.');
+    }
+    return "";
+  }
+
+
 
   @override
   void initState() {
@@ -81,12 +140,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvide = ref.read(userProvider.notifier);
+      final pic = userProvide.getpic();
+     
     return Scaffold(
       key: scaffoldKey,
       appBar: AppBar(
         title: const Text('ChatSphere'),
-        automaticallyImplyLeading:
-            false, //  this line hide the default drawer icon
+        automaticallyImplyLeading: false,
         actions: [
           IconButton(
               icon: const Icon(Icons.add_comment_outlined),
@@ -95,18 +156,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               }),
           InkWell(
             onTap: () {
-              // Handle the tap event
               print('Avatar tapped');
             },
             child: CircleAvatar(
+              
               radius: 20.0,
-              backgroundImage:
-                  AssetImage('assets/chat.png'), // Replace with your image
+              backgroundImage: NetworkImage(
+                  pic!),
             ),
           ),
           PopupMenuButton(
               onSelected: (String result) {
-                // Handle menu item selection
                 print("Selected: $result");
                 if (result == "Logout") {
                   logout();
@@ -130,63 +190,161 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       value: 'item2',
                       child: Row(
                         children: [
-                          Icon(Icons.mail),
+                          Icon(Icons.group_add_outlined,
+                              color: Theme.of(context).colorScheme.primary),
                           SizedBox(width: 8),
-                          Text('Item 1'),
+                          Text('Create Group Chat'),
                         ],
                       ),
                     ),
-                    PopupMenuItem<String>(
-                      value: 'item3',
-                      child: Row(
-                        children: [
-                          Icon(Icons.mail),
-                          SizedBox(width: 8),
-                          Text('Item 1'),
-                        ],
-                      ),
-                    ),
+                    //  PopupMenuItem<String>(
+                    //    value: 'item3',
+                    //    child: Row(
+                    //      children: const [
+                    //        Icon(Icons.mail),
+                    //        SizedBox(width: 8),
+                    //        Text('Item 1'),
+                    //      ],
+                    //    ),
+                    //  ),
                   ]),
         ],
       ),
       drawer: Drawer(
-  child: ListView(
-    children: [
-      
-      ListTile(
-        title: Row(
+        child: ListView(
           children: [
-            Expanded(
-              child: TextField(
-                controller: _searchcontroller,
-                decoration: InputDecoration(
-                  hintText: 'Enter Name or Email',
-                ),
+            ListTile(
+              title: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchcontroller,
+                          decoration: const InputDecoration(
+                            hintText: 'Enter Name or Email',
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          _searching();
+                        },
+                        child: Text('Search'),
+                      ),
+                    ],
+                  ),
+                  SingleChildScrollView(
+                    child: Column(
+                      children: searchchatss.map((e) {
+                        if (e.containsKey('name')) {
+                          return InkWell(
+                            onTap: () {
+                              acceschat(e['_id']);
+                              // Navigator.of(context).pop();
+                              //change selectedchat id
+                              // final schat=ref.read(schatProvider.notifier);
+                              print("chatscreen ${e['_id']}");
+                              // schat.setschatid(e['_id']);
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: ((context) => singleChat(
+                                        title: e['name'],
+                                        idd: e['_id'],
+                                      ))));
+                            },
+                            
+                            child: Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  children: [
+                                     CircleAvatar(
+                                      radius: 20.0,
+                                       backgroundImage:
+                                          NetworkImage(e['pic']), // Replace with your image
+                                    ),
+                                    const SizedBox(
+                                      width: 10,
+                                    ),
+                                    Text(e['name'])
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        } else {
+                          return Container();
+                        }
+                      }).toList(),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Handle button press
-                _searching();
-              },
-              child: Text('Search'),
             ),
           ],
         ),
       ),
-      // Add more ListTiles or other widgets as needed
-    ],
-  ),
-),
+      body: Padding(
+        padding: const EdgeInsets.only(top: 12.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: chatss.map((e) {
+              if (e.containsKey('_id')) {
+                String name = "chat";
+                String senderpic="";
+                //String pici=e['pic'];
+      
+                if (e['isGroupChat'] == false) {
 
-      body: Column(
-          //children: const [
-          //Expanded(
+                  setState(() {
+                    name = getsender(e['users']);
+                    senderpic=getsenderpic(e['users']);
+                    
+                  });
+                } else {
 
-          //),
-          //  New_Message(),
-          // ],
+                  setState(() {
+                    name = e['chatName'];
+                   
+                  });
+                }
+
+                return InkWell(
+                  onTap: () {
+                    // final schat=ref.read(schatProvider.notifier);
+                    // schat.setschatid(e['_id']);
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: ((context) => singleChat(
+                              title: name,
+                              idd: e['_id'],
+                            ))));
+                  },
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        children: [
+                           CircleAvatar(
+                              radius: 20.0,
+                               backgroundImage: NetworkImage(senderpic)
+                             
+                              ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Text(name)
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                return Container();
+              }
+            }).toList(),
           ),
+        ),
+      ),
     );
   }
 }
