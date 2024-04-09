@@ -2,15 +2,18 @@ import 'dart:convert';
 
 import 'package:chatapp/Screens/creategroup.dart';
 import 'package:chatapp/Screens/singleChat.dart';
+import 'package:chatapp/globalconstants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../Proveiders/userProvider.dart';
+
 import 'package:socket_io_client/socket_io_client.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:socket_io_common/src/util/event_emitter.dart';
+
+import '../Proveiders/userProvider.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({Key? key}) : super(key: key);
@@ -27,7 +30,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   var searchchatss = [];
   var pic;
   var iduser;
-  late IO.Socket socket;
+    late IO.Socket socket;
+
 
   void logout() async {
     final userProvide = ref.read(userProvider.notifier);
@@ -36,12 +40,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     await preferences.remove('user');
   }
 
-  void acceschat(String id) async {
+   acceschat(String id) async {
     try {
       final userProvide = ref.read(userProvider.notifier);
       final token = userProvide.gettoken();
-      final url = Uri.parse("http://10.0.2.2:5174/api/chat");
-      final response = await http.post(url,
+      final urll = Uri.parse("$url/api/chat");
+      final response = await http.post(urll,
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
@@ -51,17 +55,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       setState(() {
         chatss.insert(0, json.decode(response.body));
       });
+      var res=json.decode(response.body);
+      return res;
     } catch (e) {}
   }
 
+
   void _allsearching() async {
+   
     try {
       final userProvide = ref.read(userProvider.notifier);
       final token = userProvide.gettoken();
       print(token);
 
-      final url = Uri.parse('http://10.0.2.2:5174/api/user/?search:');
-      final response = await http.get(url, headers: {
+      final urll = Uri.parse(
+          '$url/api/user/?search:');
+      final response = await http.get(urll, headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       });
@@ -73,6 +82,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       print(searchchatss);
     } catch (e) {}
   }
+
 
   void _searching() async {
     final enteredMessage = _searchcontroller.text;
@@ -86,9 +96,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       print(token);
       final encodedSearchParameter = Uri.encodeQueryComponent(enteredMessage);
 
-      final url =
-          Uri.parse('http://10.0.2.2:5174/api/user/?search=$enteredMessage');
-      final response = await http.get(url, headers: {
+      final urll = Uri.parse(
+          '$url/api/user/?search=$enteredMessage');
+      final response = await http.get(urll, headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       });
@@ -106,16 +116,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final userProvide = ref.read(userProvider.notifier);
       final token = userProvide.gettoken();
       print(token);
-      http.Response response =
-          await http.get(Uri.parse("http://10.0.2.2:5174/api/chat"), headers: {
+      http.Response response = await http.get(Uri.parse("$url/api/chat"),headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       });
-
+      //final response = await http.get(url, headers: {
+      //  'Content-Type': 'application/json',
+      //  'Authorization': 'Bearer $token',
+      //});
+      print(response.body);
       setState(() {
         chatss = json.decode(response.body);
       });
-      print("chats");
       print(chatss);
     } catch (e) {
       print(e);
@@ -159,14 +171,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     final userProvide = ref.read(userProvider.notifier);
     pic = userProvide.getpic();
-    iduser = userProvide.getid();
+    iduser=userProvide.getid();
     chats();
     _allsearching();
     initSocket();
   }
 
-  void initSocket() {
-    socket = IO.io("http://10.0.2.2:5174", <String, dynamic>{
+    void initSocket() {
+    socket = IO.io("$url", <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
@@ -193,6 +205,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -200,9 +213,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         appBar: AppBar(
           title: Text('ChatSphere',
               style: GoogleFonts.inconsolata(
-                textStyle: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: const Color.fromARGB(255, 50, 10, 140)),
+                textStyle:
+                    TextStyle(fontWeight: FontWeight.w700, color: const Color.fromARGB(255, 50, 10, 140)
+),
               )),
           automaticallyImplyLeading: false,
           actions: [
@@ -267,6 +280,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           ],
                         ),
                       ),
+                    
                     ]),
           ],
         ),
@@ -300,15 +314,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         children: searchchatss.map((e) {
                           if (e.containsKey('name')) {
                             return InkWell(
-                              onTap: () {
-                                acceschat(e['_id']);
-                                searchchatss = [];
-                                print("chatscreen ${e['_id']}");
+                              onTap: () async{
+                                var res=await acceschat(e['_id']);
+                                searchchatss=[];
+                                // Navigator.of(context).pop();
+                                //change selectedchat id
+                                // final schat=ref.read(schatProvider.notifier);
+                                print("chatscreen ${e}");
+                                // schat.setschatid(e['_id']);
                                 Navigator.of(context).push(MaterialPageRoute(
                                     builder: ((context) => singleChat(
                                           title: e['name'],
-                                          idd: e['_id'],
+                                          idd: res['_id'],
                                         ))));
+
+                                        _allsearching();
                               },
                               child: Card(
                                 child: Padding(
@@ -341,7 +361,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ],
           ),
         ),
-        body: SingleChildScrollView(
+       
+
+        body:SingleChildScrollView(
           child: Column(
             children: [
               ListView.builder(
@@ -392,13 +414,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 width: 10,
                               ),
                               Expanded(child: Text(name)),
-                              read
-                                  ? Container()
-                                  : Icon(
-                                      Icons.circle,
-                                      color: Colors.blueAccent,
-                                      size: 15,
-                                    )
+                              
                             ],
                           ),
                         ),
@@ -407,6 +423,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   }),
             ],
           ),
-        ));
+        )
+        );
   }
 }

@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:chatapp/Proveiders/userProvider.dart';
-import 'package:chatapp/widgets/user_image_picker.dart';
+import 'package:chatapp/Widgets/user_image_picker.dart';
+import 'package:chatapp/globalconstants.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -26,16 +28,23 @@ class _Authstate extends ConsumerState<Auth> {
   var Confirmpassword = '';
   var pic = '';
 
-  void submit() async {
+  Future submit() async {
     final isvalid = _formkey.currentState!
         .validate(); //validate function trriger krta textformfield ka
-    _formkey.currentState!
-          .save(); 
+
     if (isvalid == true) {
-      //onsaved function trriger krta hai textformfield ke
+      _formkey.currentState!
+          .save(); //onsaved function trriger krta hai textformfield ke
 
       try {
         SharedPreferences prefs = await SharedPreferences.getInstance();
+        showDialog(
+            context: context,
+            builder: (context) {
+              return Center(
+                child: CircularProgressIndicator(),
+              );
+            });
 
         if (_islogin) {
           // Create headers with the desired content type
@@ -54,7 +63,7 @@ class _Authstate extends ConsumerState<Auth> {
 
 // Make the POST request using http package
           http.Response response = await http.post(
-            Uri.parse('http://10.0.2.2:5174/api/user/login'),
+            Uri.parse('$url/api/user/login'),
             headers: headers,
             body: requestBodyJson,
           );
@@ -83,10 +92,13 @@ class _Authstate extends ConsumerState<Auth> {
                 ),
               );
             }
+            Navigator.of(context).pop();
           } else {
             // Handle errors
             print("Error: ${response.statusCode}");
             print("Response: ${response.body}");
+                        Navigator.of(context).pop();
+
 
             ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
@@ -116,7 +128,7 @@ class _Authstate extends ConsumerState<Auth> {
 
 // Make the POST request using http package
             http.Response response = await http.post(
-              Uri.parse('http://10.0.2.2:5174/api/user/'),
+              Uri.parse('$url/api/user/'),
               headers: headers,
               body: requestBodyJson,
             );
@@ -144,10 +156,15 @@ class _Authstate extends ConsumerState<Auth> {
                   ),
                 );
               }
+              Navigator.of(context).pop();
             } else {
               // Request failed, handle error
               print('Request failed with status: ${response.statusCode}');
-              print('Response body: ${response.body}');
+              print('Response body: ${json.decode( response.body)['msg']}');
+                            Navigator.of(context).pop();
+
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(json.decode( response.body)['msg'])));
             }
           } else {
             // Create headers with the desired content type
@@ -168,7 +185,7 @@ class _Authstate extends ConsumerState<Auth> {
 
 // Make the POST request using http package
             http.Response response = await http.post(
-              Uri.parse('http://10.0.2.2:5174/api/user/'),
+              Uri.parse('$url/api/user/'),
               headers: headers,
               body: requestBodyJson,
             );
@@ -195,10 +212,15 @@ class _Authstate extends ConsumerState<Auth> {
                   ),
                 );
               }
+              Navigator.of(context).pop();
             } else {
               // Request failed, handle error
               print('Request failed with status: ${response.statusCode}');
-              print('Response body: ${response.body}');
+              print('Response body: ${json.decode( response.body)['msg']}');
+                            Navigator.of(context).pop();
+
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(json.decode( response.body)['msg'])));
             }
           }
         }
@@ -341,7 +363,67 @@ class _Authstate extends ConsumerState<Auth> {
                             SizedBox(
                               height: 20,
                             ),
-                            TextFormField(
+                            if (!_islogin)
+                              TextFormField(
+                                  decoration: InputDecoration(
+                                      enabledBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade600),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade500),
+                                      ),
+                                      fillColor: Colors.grey[300],
+                                      filled: true,
+                                      labelText: 'Email Adress'),
+                                  keyboardType: TextInputType.emailAddress,
+                                  autocorrect: false,
+                                  textCapitalization: TextCapitalization.none,
+                                  validator: (value) {
+                                    if (value == null ||
+                                        value.trim().isEmpty ||
+                                        !value.contains('@')) {
+                                      return "Please enter a valid Email Address";
+                                    }
+                                    return null;
+                                  },
+                                  onSaved: (value) {
+                                    _enteredemail = value!;
+                                  }),
+                            if (_islogin)
+                              TextFormField(
+                                  decoration: InputDecoration(
+                                      enabledBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade600),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade500),
+                                      ),
+                                      fillColor: Colors.grey[300],
+                                      filled: true,
+                                      labelText: 'Email Adress'),
+                                  keyboardType: TextInputType.emailAddress,
+                                  autocorrect: false,
+                                  textCapitalization: TextCapitalization.none,
+                                  validator: (value) {
+                                    if (value == null ||
+                                        value.trim().isEmpty ||
+                                        !value.contains('@')) {
+                                      return "Please enter a valid Email Address";
+                                    }
+                                    return null;
+                                  },
+                                  onSaved: (value) {
+                                    _enteredemail = value!;
+                                  }),
+                            SizedBox(
+                              height: 20,
+                            ),
+                            if (!_islogin)
+                              TextFormField(
                                 decoration: InputDecoration(
                                     enabledBorder: OutlineInputBorder(
                                       borderSide: BorderSide(
@@ -353,50 +435,47 @@ class _Authstate extends ConsumerState<Auth> {
                                     ),
                                     fillColor: Colors.grey[300],
                                     filled: true,
-                                    labelText: 'Email Adress'),
-                                keyboardType: TextInputType.emailAddress,
-                                autocorrect: false,
-                                textCapitalization: TextCapitalization.none,
+                                    labelText: 'Password'),
+                                obscureText: true,
                                 validator: (value) {
                                   if (value == null ||
                                       value.trim().isEmpty ||
-                                      !value.contains('@')) {
-                                    return "Please enter a valid Email Address";
+                                      value.trim().length < 7) {
+                                    return "Please enter a Password of length more than 6";
                                   }
                                   return null;
                                 },
                                 onSaved: (value) {
-                                  _enteredemail = value!;
-                                }),
-                            SizedBox(
-                              height: 20,
-                            ),
-                            TextFormField(
-                              decoration: InputDecoration(
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide:
-                                        BorderSide(color: Colors.grey.shade600),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide:
-                                        BorderSide(color: Colors.grey.shade500),
-                                  ),
-                                  fillColor: Colors.grey[300],
-                                  filled: true,
-                                  labelText: 'Password'),
-                              obscureText: true,
-                              validator: (value) {
-                                if (value == null ||
-                                    value.trim().isEmpty ||
-                                    value.trim().length < 7) {
-                                  return "Please enter a Password of length more than 6";
-                                }
-                                return null;
-                              },
-                              onSaved: (value) {
-                                Password = value!;
-                              },
-                            ),
+                                  Password = value!;
+                                },
+                              ),
+                            if (_islogin)
+                              TextFormField(
+                                decoration: InputDecoration(
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                          color: Colors.grey.shade600),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                          color: Colors.grey.shade500),
+                                    ),
+                                    fillColor: Colors.grey[300],
+                                    filled: true,
+                                    labelText: 'Password'),
+                                obscureText: true,
+                                validator: (value) {
+                                  if (value == null ||
+                                      value.trim().isEmpty ||
+                                      value.trim().length < 7) {
+                                    return "Please enter a Password of length more than 6";
+                                  }
+                                  return null;
+                                },
+                                onSaved: (value) {
+                                  Password = value!;
+                                },
+                              ),
                             if (!_islogin)
                               SizedBox(
                                 height: 20,
@@ -420,7 +499,7 @@ class _Authstate extends ConsumerState<Auth> {
                                   if (Confirmpassword != Password) {
                                     return "Password's don't match";
                                   }
-                                  //return ;
+                                  return null;
                                 },
                                 onSaved: (value) {
                                   Confirmpassword = value!;

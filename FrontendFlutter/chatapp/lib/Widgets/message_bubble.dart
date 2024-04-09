@@ -8,14 +8,14 @@ class MessageBubble extends StatelessWidget {
     required this.userImage,
     required this.username,
     required this.message,
-    required this.isMe, 
+    required this.isMe,
   }) : isFirstInSequence = true;
 
   // Create a amessage bubble that continues the sequence.
   const MessageBubble.next({
     super.key,
     required this.message,
-    required this.isMe, 
+    required this.isMe,
   })  : isFirstInSequence = false,
         userImage = null,
         username = null;
@@ -38,7 +38,6 @@ class MessageBubble extends StatelessWidget {
 
   // Controls how the MessageBubble will be aligned.
   final bool isMe;
-
 
   @override
   Widget build(BuildContext context) {

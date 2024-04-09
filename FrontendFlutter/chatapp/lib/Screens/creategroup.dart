@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:chatapp/Proveiders/userProvider.dart';
 import 'package:chatapp/Screens/chatscreen.dart';
-import 'package:chatapp/widgets/user_image_picker.dart';
+import 'package:chatapp/Widgets/user_image_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
@@ -42,7 +42,7 @@ class _creategroupstate extends ConsumerState<creategroup> {
       print(token);
 
       final url = Uri.http(
-          "http://10.0.2.2:5174/api/user/?search=$enteredMessage");
+          "https://chatsphere-zajo.onrender.com/api/user/?search=$enteredMessage");
       final response = await http.get(url, headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -65,7 +65,7 @@ class _creategroupstate extends ConsumerState<creategroup> {
       print(token);
 
       final url = Uri.parse(
-          'http://10.0.2.2:5174/api/user/?search:');
+          'https://chatsphere-zajo.onrender.com/api/user/?search:');
       final response = await http.get(url, headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -107,7 +107,7 @@ class _creategroupstate extends ConsumerState<creategroup> {
         print("token$token");
         print("uploading$pic");
 
-        final url = Uri.parse("http://10.0.2.2:5174/api/chat/group");
+        final url = Uri.parse("chatsphere-zajo.onrender.com/api/chat/group");
         final response = await http.post(url,
             headers: {
               'Content-Type': 'application/json',
@@ -135,7 +135,7 @@ class _creategroupstate extends ConsumerState<creategroup> {
         print("token$token");
         print("uploading$pic");
 
-        final url = Uri.http("10.0.2.2:5174", "/api/chat/group");
+        final url = Uri.http("chatsphere-zajo.onrender.com", "/api/chat/group");
         final response = await http.post(url,
             headers: {
               'Content-Type': 'application/json',

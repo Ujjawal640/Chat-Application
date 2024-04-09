@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:chatapp/Proveiders/userProvider.dart';
-import 'package:chatapp/widgets/message_bubble.dart';
+import 'package:chatapp/Widgets/message_bubble.dart';
+import 'package:chatapp/globalconstants.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
@@ -25,14 +26,15 @@ class singleChat extends ConsumerStatefulWidget {
 class _singleChatState extends ConsumerState<singleChat>
     with WidgetsBindingObserver {
   var messages = [];
+  //var newmessage = "";
   var loading = false;
   var socketconnected = false;
   var typing = false;
+//  var socket;
   late String id;
   var user;
   late IO.Socket socket;
   final TextEditingController _messageController = TextEditingController();
-   bool useractive=false;
 
   void fetchmessage(String id) async {
     try {
@@ -44,8 +46,8 @@ class _singleChatState extends ConsumerState<singleChat>
       final userProvide = ref.read(userProvider.notifier);
       final token = userProvide.gettoken();
       print("singlechat fetching $id");
-      final url = Uri.parse("http://10.0.2.2:5174/api/message/$id");
-      final response = await http.get(url, headers: {
+      final urll = Uri.parse("$url/api/message/$id");
+      final response = await http.get(urll, headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       });
@@ -60,13 +62,13 @@ class _singleChatState extends ConsumerState<singleChat>
     }
   }
 
-    void read(String id) async {
+      void read(String id) async {
       try {
         final userProvide = ref.read(userProvider.notifier);
         final token = userProvide.gettoken();
         final iduser = userProvide.getid();
-        final url = Uri.parse("http://10.0.2.2:5174/api/message/read");
-        final response = await http.post(url,
+        final urll = Uri.parse("$url/api/message/read");
+        final response = await http.post(urll,
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
@@ -91,9 +93,8 @@ class _singleChatState extends ConsumerState<singleChat>
       try {
         final userProvide = ref.read(userProvider.notifier);
         final token = userProvide.gettoken();
-        final iduser = userProvide.getid();
-        final url = Uri.parse("http://10.0.2.2:5174/api/message");
-        final response = await http.post(url,
+        final urll = Uri.parse("$url/api/message");
+        final response = await http.post(urll,
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
@@ -101,7 +102,6 @@ class _singleChatState extends ConsumerState<singleChat>
             body: json.encode({
               "content": newmessage,
               "chatId": id,
-              "readBy":iduser,
             }));
 
         final data = json.decode(response.body);
@@ -132,13 +132,11 @@ class _singleChatState extends ConsumerState<singleChat>
     fetchmessage(id);
     read(id);
     WidgetsBinding.instance.addObserver(this);
-     final userProvide = ref.read(userProvider.notifier);
-        final iduser = userProvide.getid();
-    initSocket(id,iduser);
+    initSocket();
   }
 
-  void initSocket(id,iduser) {
-    socket = IO.io("http://10.0.2.2:5174", <String, dynamic>{
+  void initSocket() {
+    socket = IO.io("$url", <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
@@ -156,11 +154,6 @@ class _singleChatState extends ConsumerState<singleChat>
     socket.on('connected', (data) {
       print('Socket.io server connected: ');
     });
-    
-       
-
-   
-
 
     socket.on("message recieved", (newMessageRecieved) {
       print(newMessageRecieved);
@@ -211,16 +204,31 @@ class _singleChatState extends ConsumerState<singleChat>
                 final chatMessage = messages[index]["content"];
                  final userProvide = ref.read(userProvider.notifier);
                 final userid = userProvide.getid();
-                
-               
+               // final nextChatMessage = index + 1 < messages.length
+                 //   ? messages[index + 1].data()
+                 //   : null;
+
+              //  final currentMessageUserId = id;
+              //  final nextMessageUserId =
+              //      nextChatMessage != null ? nextChatMessage['userId'] : null;
+              ///  final nextUserIsSame =
+              //      nextMessageUserId == currentMessageUserId;
+
+                   
+
+                //  if (nextUserIsSame) {
+                //    return MessageBubble.next(
+                //      message: chatMessage,
+                //      isMe: userid == messages[index]["sender"]["_id"],
+                //   );
+                //  } else {
                     return MessageBubble.first(
-                      userImage: messages[index]["sender"]["pic"], 
+                      userImage: messages[index]["sender"]["pic"], //messages[index]["sender"]["pic"],
                       username:messages[index]["sender"]["name"],
                       message: chatMessage,
                       isMe: userid == messages[index]["sender"]["_id"],
-                      
                     );
-              
+                //  }
               },
             )),
             Card(
